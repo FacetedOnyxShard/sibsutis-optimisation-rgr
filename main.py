@@ -6,17 +6,23 @@ def prepare_matrix(matrix):
     return normalized_matrix
 
 
+def is_basis_col(ck, matrix):
+    row_sum = Fraction(0)
+    for rk in range(len(matrix)):
+        row_sum += abs(matrix[rk][ck])
+        if row_sum > Fraction(1):
+            return False
+    return True
+
+
 def find_basis_variables(matrix):
     basis_vars = []
 
     for ck in range(len(matrix[0]) - 1):
-        basis_var = True
-        row_sum = Fraction(0)
-        for rk in range(len(matrix)):
-            row_sum += abs(matrix[rk][ck])
-            if row_sum > Fraction(1):
-                basis_var = False
-                break
+        if matrix[0][ck] != Fraction(0):
+            continue
+
+        basis_var = is_basis_col(ck, matrix)
 
         if not basis_var:
             continue
@@ -25,7 +31,30 @@ def find_basis_variables(matrix):
     return basis_vars
 
 
-def prepare_for_simplex(matrix, z_str, needed_vars, basis_list):
+def derive_basis_vars(matrix):
+    # ищем столбцы с базисными переменными
+    basis_cols = []
+
+    for ck in range(len(matrix[0])):
+        if matrix[0][ck] != Fraction(0):
+            continue
+
+        if is_basis_col(ck, matrix):
+            basis_cols.append(ck)
+
+    # выводим
+    equalities = []
+    for bk in basis_cols:
+        for rk in range(len(matrix)):
+            if matrix[rk][bk] == Fraction(1):
+                # нужная строка, из нее можно вывести x_{bk + 1}
+
+                break
+
+    return equalities
+
+
+def add_basis_vars(matrix, z_str, needed_vars, basis_list):
     # найти строки для которых уже есть переменная в базисе
     basis_rows = []
 
@@ -57,9 +86,7 @@ def prepare_for_simplex(matrix, z_str, needed_vars, basis_list):
     for rk in range(len(matrix)):
         simplex_matrix[rk].extend(addition_rows[rk])
 
-    simplex_z_str = None
-    simplex_m_str = None
-    return [simplex_matrix, simplex_z_str, simplex_m_str]
+    return simplex_matrix
 
 
 def artificial_variable_simplex():
@@ -93,15 +120,20 @@ def main() -> None:
 
     # находим переменные которые уже образуют базис
     basis_list = find_basis_variables(MATRIX)
+
+    # добавляем искусственные переменные в базис
+    needed_vars = len(MATRIX) - len(basis_list)
+    simplex_matrix = add_basis_vars(MATRIX, Z_STR, needed_vars, basis_list)
+
     # выводим базисные переменные через свободные
+    basis_vars_equalities = derive_basis_vars(simplex_matrix)
 
     # подставляем выведенные переменные в Z строку
 
     # отнимаем искусственные переменные от Z и добаляем их в матрицу
-    needed_vars = len(MATRIX) - len(basis_list)
-    simplex_matrix, simplex_z_str, simplex_m_str = prepare_for_simplex(
-        MATRIX, Z_STR, needed_vars, basis_list
-    )
+    # simplex_matrix, simplex_z_str, simplex_m_str = prepare_for_simplex(
+    #     MATRIX, Z_STR, needed_vars, basis_list
+    # )
 
     # решаем симплекс методом с M строкой
     artificial_variable_simplex()
