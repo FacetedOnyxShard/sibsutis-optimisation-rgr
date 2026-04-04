@@ -314,6 +314,12 @@ def create_linear_expression(n: int):
     return expression
 
 
+def create_linear_expression_with_start(start: int, end: int):
+    var_symbols = symbols([f"x{i + 1}" for i in range(start - 1, end)])
+    expression = Add(*var_symbols)
+    return expression
+
+
 def create_or_truncate_file(filepath: str):
     with open(filepath, "w"):
         pass
