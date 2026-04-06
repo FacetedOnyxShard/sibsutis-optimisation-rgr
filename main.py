@@ -1,4 +1,6 @@
 from matrix import *
+from sympy import Poly
+import sympy as sp
 
 
 def prepare_matrix(matrix):
@@ -128,7 +130,6 @@ def prepare_z_str(basis_vars_equalities, needed_vars, z_str):
         ]
     )
     z_str_equation = Eq(-var_terms, const_terms)
-    print(z_str_equation)
 
     # преобразуем m строку
     first_idx = int(m_basis[-1]["base"][1:])
@@ -153,15 +154,72 @@ def prepare_z_str(basis_vars_equalities, needed_vars, z_str):
     )
 
     m_str_equation = Eq(var_terms, -const_terms)
-    print(m_str_equation)
 
     return z_str_equation, m_str_equation
 
 
-def artificial_variable_simplex():
+def move_column(matrix, from_idx, to_idx):
+    for row in matrix:
+        col = row.pop(from_idx)
+        row.insert(to_idx, col)
+    return matrix
+
+
+def sympy_to_frac(n):
+    return Fraction(int(n))
+
+
+def prepare_simplex_matrix(simplex_matrix, z_str_eq, m_str_eq):
+    z_row = []
+    m_row = []
+
+    z_row.append(sympy_to_frac(z_str_eq.rhs))
+    m_row.append(sympy_to_frac(m_str_eq.rhs))
+
+    z_coeffs = []
+    m_coeffs = []
+
+    x_map = create_x_map(len(simplex_matrix[0]) - 1)
+    for var in x_map:
+        z_coeffs.append(sympy_to_frac(z_str_eq.lhs.coeff(var)))
+        m_coeffs.append(sympy_to_frac(m_str_eq.lhs.coeff(var)))
+
+    z_row.extend(z_coeffs)
+    m_row.extend(m_coeffs)
+
+    full_simplex_matrix = copy_matrix(simplex_matrix)
+
+    move_column(full_simplex_matrix, -1, 0)
+    full_simplex_matrix.append(z_row)
+    full_simplex_matrix.append(m_row)
+
+    return full_simplex_matrix
+
+
+def artificial_variable_simplex(simplex_matrix):
     # симплекс метод с M строкой
     # выбираем столбец (самое большое отрицательное число среди коэффициентов)
+    min_in_m = simplex_matrix[-1][1]
+    min_ck = 1
+    for ck in range(2, len(simplex_matrix[-1])):
+        if simplex_matrix[-1][ck] < min_in_m:
+            min_in_m = simplex_matrix[-1][ck]
+            min_ck = ck
+
     # выбираем строку (самое маленькое симплексное отношение)
+    sr = []
+    for rk in range(
+        len(simplex_matrix) - 2
+    ):  # нужно сделать вычисление из другой матрицы
+        sr.append(simplex_matrix[rk][0] / simplex_matrix[rk][min_ck])
+
+    min_sr = sr[0]
+    min_sr_idx = 0
+    for i in range(1, len(sr)):
+        if sr[i] < min_sr:
+            min_sr = sr[i]
+            min_sr_idx = i
+
     # выбранный элемент разрешающий делаем жорданово преобразование относительно его
     # если перменная ИБ вышла из базиса вычеркиваем столбец этой переменной
     # если M строка занулилась вычеркиваем M строку
@@ -197,16 +255,14 @@ def main() -> None:
     # выводим базисные переменные через свободные
     basis_vars_equalities = derive_basis_vars(simplex_matrix)
 
-    # подставляем выведенные переменные в Z строку
+    # выводим Z и M строку
     z_str_eq, m_str_eq = prepare_z_str(basis_vars_equalities, needed_vars, Z_STR)
 
-    # отнимаем искусственные переменные от Z и добаляем их в матрицу
-    # simplex_matrix, simplex_z_str, simplex_m_str = prepare_for_simplex(
-    #     MATRIX, Z_STR, needed_vars, basis_list
-    # )
+    # готовим симплекс матрицу
+    full_simplex_matrix = prepare_simplex_matrix(simplex_matrix, z_str_eq, m_str_eq)
 
     # решаем симплекс методом с M строкой
-    artificial_variable_simplex()
+    artificial_variable_simplex(full_simplex_matrix)
 
     # print_matrix(MATRIX)
 
