@@ -73,6 +73,24 @@ def calculate_elements(a, a_hat, row: int, col: int):
             a_hat[crow][ccol] = current_element - (koef * a[row][ccol])
 
 
+def calculate_elements_all_dir(a, a_hat, row: int, col: int):
+    enabling_element = a[row][col]
+
+    for crow in range(len(a)):
+        koef = a[crow][col] / enabling_element
+
+        for ccol in range(len(a[crow])):
+            if ccol == col:
+                continue
+
+            if crow == row:
+                continue
+
+            current_element = a[crow][ccol]
+
+            a_hat[crow][ccol] = current_element - (koef * a[row][ccol])
+
+
 def strike_zero_rows(matrix: list[list[Fraction]], row) -> list[list[Fraction]]:
     zero_rows = []
     for crow in range(row + 1, len(matrix)):

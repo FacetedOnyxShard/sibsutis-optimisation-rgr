@@ -197,30 +197,42 @@ def prepare_simplex_matrix(simplex_matrix, z_str_eq, m_str_eq):
 
 
 def artificial_variable_simplex(simplex_matrix):
-    # симплекс метод с M строкой
-    # выбираем столбец (самое большое отрицательное число среди коэффициентов)
-    min_in_m = simplex_matrix[-1][1]
-    min_ck = 1
-    for ck in range(2, len(simplex_matrix[-1])):
-        if simplex_matrix[-1][ck] < min_in_m:
-            min_in_m = simplex_matrix[-1][ck]
-            min_ck = ck
+    simplex_matrix_copy = copy_matrix(simplex_matrix)
 
-    # выбираем строку (самое маленькое симплексное отношение)
-    sr = []
-    for rk in range(
-        len(simplex_matrix) - 2
-    ):  # нужно сделать вычисление из другой матрицы
-        sr.append(simplex_matrix[rk][0] / simplex_matrix[rk][min_ck])
+    for i in range(3):  # TODO: нужно придумать условие
+        # симплекс метод с M строкой
+        # выбираем столбец (самое большое отрицательное число среди коэффициентов)
+        min_in_m = simplex_matrix_copy[-1][1]
+        min_ck = 1
+        for ck in range(2, len(simplex_matrix_copy[-1])):
+            if simplex_matrix_copy[-1][ck] < min_in_m:
+                min_in_m = simplex_matrix_copy[-1][ck]
+                min_ck = ck
 
-    min_sr = sr[0]
-    min_sr_idx = 0
-    for i in range(1, len(sr)):
-        if sr[i] < min_sr:
-            min_sr = sr[i]
-            min_sr_idx = i
+        # выбираем строку (самое маленькое симплексное отношение)
+        sr = []
+        for rk in range(
+            len(simplex_matrix_copy) - 2
+        ):  # нужно сделать вычисление из другой матрицы
+            sr.append(simplex_matrix_copy[rk][0] / simplex_matrix_copy[rk][min_ck])
 
-    # выбранный элемент разрешающий делаем жорданово преобразование относительно его
+        min_sr = sr[0]
+        min_rk = 0
+        for i in range(1, len(sr)):
+            if sr[i] < min_sr:
+                min_sr = sr[i]
+                min_rk = i
+
+        # выбранный элемент разрешающий делаем жорданово преобразование относительно его
+        new_simplex_matrix = transform_matrix(simplex_matrix_copy, min_rk, min_ck)
+        calculate_elements_all_dir(
+            simplex_matrix_copy, new_simplex_matrix, min_rk, min_ck
+        )
+
+        print_matrix(new_simplex_matrix)
+
+        simplex_matrix_copy = copy_matrix(new_simplex_matrix)
+
     # если перменная ИБ вышла из базиса вычеркиваем столбец этой переменной
     # если M строка занулилась вычеркиваем M строку
     # если в M строке все коэффициенты положительны -> решение оптимально
