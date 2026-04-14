@@ -64,7 +64,9 @@ def derive_basis_vars(matrix):
     return equalities
 
 
-def add_basis_vars(matrix, needed_vars, basis_list):
+def add_basis_vars(const_matrix, needed_vars, basis_list):
+    matrix = copy_matrix(const_matrix)
+
     # найти строки для которых уже есть переменная в базисе
     basis_rows = []
 
@@ -196,10 +198,23 @@ def prepare_simplex_matrix(simplex_matrix, z_str_eq, m_str_eq):
     return full_simplex_matrix
 
 
-def artificial_variable_simplex(simplex_matrix):
+def artificial_variable_simplex(simplex_matrix, len_src_matrix):
     simplex_matrix_copy = copy_matrix(simplex_matrix)
+    len_simplex_values = len(simplex_matrix[0]) - 1
 
-    for i in range(3):  # TODO: нужно придумать условие
+    # добавить базисную переменную из исходной матрицы
+
+    while True:
+        # условие выхода (нужна проверка Z строки) и другие проверки для M строки
+        all_zeroes = True
+        for i in range(len_src_matrix):
+            if simplex_matrix_copy[-1][i] != Fraction(0):
+                all_zeroes = False
+                break
+
+        if all_zeroes:
+            break
+
         # симплекс метод с M строкой
         # выбираем столбец (самое большое отрицательное число среди коэффициентов)
         min_in_m = simplex_matrix_copy[-1][1]
@@ -214,6 +229,16 @@ def artificial_variable_simplex(simplex_matrix):
         for rk in range(
             len(simplex_matrix_copy) - 2
         ):  # нужно сделать вычисление из другой матрицы
+            if simplex_matrix_copy[rk][min_ck] == Fraction(0):
+                sr.append(float("inf"))
+                continue
+            if (
+                abs(simplex_matrix_copy[rk][0] / simplex_matrix_copy[rk][min_ck])
+                != simplex_matrix_copy[rk][0] / simplex_matrix_copy[rk][min_ck]
+            ):
+                sr.append(float("inf"))
+                continue
+
             sr.append(simplex_matrix_copy[rk][0] / simplex_matrix_copy[rk][min_ck])
 
         min_sr = sr[0]
@@ -239,7 +264,17 @@ def artificial_variable_simplex(simplex_matrix):
     # если (решение_оптимально и не_вышла_из_базиса(переменная_ИБ)) система несовместна
     # если (нет_м_строки() и коэфициенты_з_положительны()) решение найдено
     # пока (есть_м_строка() или коэфициенты_з_положительны())
-    pass
+    return simplex_matrix_copy
+
+
+def get_answer_from_matrix(answer_matrix, z_str_eq):
+    values = []
+    for rk in range(len(answer_matrix) - 2):
+        values.append(answer_matrix[rk][0])
+
+    for value in values:
+        z_str_eq = z_str_eq.subs(f"x{j + 1}", frac_to_sympy(value))
+    print(z_str_eq)
 
 
 def main() -> None:
@@ -274,9 +309,10 @@ def main() -> None:
     full_simplex_matrix = prepare_simplex_matrix(simplex_matrix, z_str_eq, m_str_eq)
 
     # решаем симплекс методом с M строкой
-    artificial_variable_simplex(full_simplex_matrix)
+    answer_matrix = artificial_variable_simplex(full_simplex_matrix, len(MATRIX[0]))
 
-    # print_matrix(MATRIX)
+    # получаем ответ
+    # get_answer_from_matrix(answer_matrix, z_str_eq)
 
     # answer_obj, intermediate_matrices = solve_linear_system(MATRIX)
 

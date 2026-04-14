@@ -1,3 +1,7 @@
+from enum import Enum
+import math
+
+
 class Fraction:
     def __init__(self, numerator, denominator=1):
         if type(numerator) is Fraction or type(denominator) is Fraction:
@@ -111,7 +115,40 @@ class Fraction:
 
         return Fraction(numerator, denominator)
 
+    class CompareTypes(Enum):
+        lt = (0,)
+        gt = (1,)
+        eq = (2,)
+        ne = (3,)
+
+    def try_to_compare_with_inf(self, other, comp_type: CompareTypes):
+        if not (isinstance(other, (int, float))):
+            return None
+        if not math.isinf(other):
+            return None
+
+        if comp_type == self.CompareTypes.eq:
+            return False
+
+        if comp_type == self.CompareTypes.ne:
+            return True
+
+        if other == float("inf"):
+            if comp_type == self.CompareTypes.lt:
+                return True
+            else:
+                return False
+        if other == float("-inf"):
+            if comp_type == self.CompareTypes.lt:
+                return False
+            else:
+                return True
+
     def __eq__(self, other):
+        inf_compare_res = self.try_to_compare_with_inf(other, self.CompareTypes.eq)
+        if inf_compare_res is not None:
+            return inf_compare_res
+
         self.__check_type(other)
 
         return (
@@ -119,6 +156,10 @@ class Fraction:
         )
 
     def __ne__(self, other):
+        inf_compare_res = self.try_to_compare_with_inf(other, self.CompareTypes.ne)
+        if inf_compare_res is not None:
+            return inf_compare_res
+
         self.__check_type(other)
 
         return (
@@ -126,6 +167,10 @@ class Fraction:
         )
 
     def __lt__(self, other):
+        inf_compare_res = self.try_to_compare_with_inf(other, self.CompareTypes.lt)
+        if inf_compare_res is not None:
+            return inf_compare_res
+
         self.__check_type(other)
 
         left = self.numerator * other.denominator
@@ -134,6 +179,10 @@ class Fraction:
         return left < right
 
     def __le__(self, other):
+        inf_compare_res = self.try_to_compare_with_inf(other, self.CompareTypes.lt)
+        if inf_compare_res is not None:
+            return inf_compare_res
+
         self.__check_type(other)
 
         left = self.numerator * other.denominator
@@ -142,6 +191,10 @@ class Fraction:
         return left <= right
 
     def __gt__(self, other):
+        inf_compare_res = self.try_to_compare_with_inf(other, self.CompareTypes.gt)
+        if inf_compare_res is not None:
+            return inf_compare_res
+
         self.__check_type(other)
 
         left = self.numerator * other.denominator
@@ -150,6 +203,10 @@ class Fraction:
         return left > right
 
     def __ge__(self, other):
+        inf_compare_res = self.try_to_compare_with_inf(other, self.CompareTypes.gt)
+        if inf_compare_res is not None:
+            return inf_compare_res
+
         self.__check_type(other)
 
         left = self.numerator * other.denominator
