@@ -61,7 +61,7 @@ def derive_basis_vars(matrix):
             equalities.append({"base": f"x{bk + 1}", "equation": solution})
             break
 
-    return equalities
+    return equalities, basis_cols
 
 
 def add_basis_vars(const_matrix, needed_vars, basis_list):
@@ -198,9 +198,11 @@ def prepare_simplex_matrix(simplex_matrix, z_str_eq, m_str_eq):
     return full_simplex_matrix
 
 
-def artificial_variable_simplex(simplex_matrix, len_src_matrix):
+def artificial_variable_simplex(simplex_matrix, len_src_matrix, basis_cols):
     simplex_matrix_copy = copy_matrix(simplex_matrix)
     len_simplex_values = len(simplex_matrix[0]) - 1
+
+    answer = basis_cols
 
     # добавить базисную переменную из исходной матрицы
 
@@ -248,6 +250,8 @@ def artificial_variable_simplex(simplex_matrix, len_src_matrix):
                 min_sr = sr[i]
                 min_rk = i
 
+        answer[min_rk] = min_ck
+
         # выбранный элемент разрешающий делаем жорданово преобразование относительно его
         new_simplex_matrix = transform_matrix(simplex_matrix_copy, min_rk, min_ck)
         calculate_elements_all_dir(
@@ -264,17 +268,21 @@ def artificial_variable_simplex(simplex_matrix, len_src_matrix):
     # если (решение_оптимально и не_вышла_из_базиса(переменная_ИБ)) система несовместна
     # если (нет_м_строки() и коэфициенты_з_положительны()) решение найдено
     # пока (есть_м_строка() или коэфициенты_з_положительны())
-    return simplex_matrix_copy
+    return simplex_matrix_copy, answer
 
 
-def get_answer_from_matrix(answer_matrix, z_str_eq):
+def get_answer_from_matrix(answer_matrix, z_str_eq, answer_idxs):
     values = []
     for rk in range(len(answer_matrix) - 2):
         values.append(answer_matrix[rk][0])
 
-    for value in values:
-        z_str_eq = z_str_eq.subs(f"x{j + 1}", frac_to_sympy(value))
-    print(z_str_eq)
+    k = 0
+    answer = [Fraction(0)] * 7
+    for val in values:
+        answer[answer_idxs[k] - 1] = val
+        k += 1
+
+    return answer
 
 
 def main() -> None:
@@ -300,7 +308,7 @@ def main() -> None:
     simplex_matrix = add_basis_vars(MATRIX, needed_vars, basis_list)
 
     # выводим базисные переменные через свободные
-    basis_vars_equalities = derive_basis_vars(simplex_matrix)
+    basis_vars_equalities, basis_cols = derive_basis_vars(simplex_matrix)
 
     # выводим Z и M строку
     z_str_eq, m_str_eq = prepare_z_str(basis_vars_equalities, needed_vars, Z_STR)
@@ -309,10 +317,15 @@ def main() -> None:
     full_simplex_matrix = prepare_simplex_matrix(simplex_matrix, z_str_eq, m_str_eq)
 
     # решаем симплекс методом с M строкой
-    answer_matrix = artificial_variable_simplex(full_simplex_matrix, len(MATRIX[0]))
+    answer_matrix, answer_idxs = artificial_variable_simplex(
+        full_simplex_matrix, len(MATRIX[0]), basis_cols
+    )
 
     # получаем ответ
-    # get_answer_from_matrix(answer_matrix, z_str_eq)
+    answer = get_answer_from_matrix(answer_matrix, z_str_eq, answer_idxs)
+
+    print()
+    print_matrix([answer])
 
     # answer_obj, intermediate_matrices = solve_linear_system(MATRIX)
 
