@@ -285,6 +285,8 @@ def get_answer_from_matrix(answer_matrix, z_str_eq, answer_idxs):
     return answer
 
 
+# бесконечно много решений, когда под свободной переменной в Z или M строке 0
+# нет решений, когда мы не можем выбрать строку или столбец
 def main() -> None:
     MATRIX_DIR = "0_zlp"
     TASK_ID = "pr_task3"
