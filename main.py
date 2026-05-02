@@ -298,24 +298,28 @@ def artificial_variable_simplex(simplex_matrix, len_src_matrix, basis_cols):
         for rk in range(
             len(simplex_matrix_copy) - 2
         ):  # нужно сделать вычисление из другой матрицы
-            if simplex_matrix_copy[rk][min_ck] == Fraction(0):
+            element = simplex_matrix_copy[rk][min_ck]
+            if element == Fraction(0):
                 sr.append(float("inf"))
-                continue
-            if (
-                abs(simplex_matrix_copy[rk][0] / simplex_matrix_copy[rk][min_ck])
-                != simplex_matrix_copy[rk][0] / simplex_matrix_copy[rk][min_ck]
-            ):
+            elif simplex_matrix_copy[rk][0] / element < Fraction(0):
                 sr.append(float("inf"))
-                continue
+            else:
+                sr.append(simplex_matrix_copy[rk][0] / element)
 
-            sr.append(simplex_matrix_copy[rk][0] / simplex_matrix_copy[rk][min_ck])
-
-        min_sr = sr[0]
-        min_rk = 0
-        for i in range(1, len(sr)):
+        # поиск минимального симплексного отношения
+        min_sr = sr[0]  # начальное значение
+        if min_sr != float("inf"):
+            min_sr += Fraction(1)
+        min_rk = -1
+        for i in range(len(sr)):
             if sr[i] < min_sr:
                 min_sr = sr[i]
                 min_rk = i
+
+        # если не нашли ни одного подходящего СО
+        if min_rk == -1:
+            is_correct = False
+            break
 
         answer[min_rk] = min_ck
 
