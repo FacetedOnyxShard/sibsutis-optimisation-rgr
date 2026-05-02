@@ -19,6 +19,17 @@ from sympy import Eq, solve, sympify, symbols, Integer, Rational
 import os
 
 
+def move_column(matrix, from_idx, to_idx):
+    for row in matrix:
+        col = row.pop(from_idx)
+        row.insert(to_idx, col)
+    return matrix
+
+
+def sympy_to_frac(n):
+    return Fraction(int(n))
+
+
 def prepare_matrix(matrix):
     normalized_matrix = [row for row in matrix if row != []]
     return normalized_matrix
@@ -107,36 +118,36 @@ def add_basis_vars(const_matrix, needed_vars, basis_list):
     # найти строки для которых уже есть переменная в базисе
     basis_rows = []
 
+    print_matrix(matrix)
+
+    # находит строки на которых распологаются базисные значения
     for ck in basis_list:
         for rk in range(len(matrix)):
             if matrix[rk][ck] == Fraction(1):
                 basis_rows.append(rk)
                 break
 
+    print_matrix(matrix)
+
     #
     basis_set = set(basis_rows)
 
-    #
-    cur_var_idx = 0
-    addition_rows = []
-    for i in range(len(matrix)):
-        row = []
-        for var_idx in range(needed_vars):
-            if i not in basis_set and cur_var_idx == var_idx:
-                row.append(Fraction(1))
-            else:
-                row.append(Fraction(0))
+    missing_basis_rows = [i for i in range(len(matrix)) if i not in basis_set]
+    current_idx_in_missing = 0
+    for i in range(needed_vars):
+        col = [Fraction(0)] * len(matrix)
+        col[missing_basis_rows[current_idx_in_missing]] = Fraction(1)
+        current_idx_in_missing += 1
 
-        r_eq_elem = matrix[i].pop()
-        row.append(r_eq_elem)
-        cur_var_idx += 1
-        addition_rows.append(row)
+        for j in range(len(matrix)):
+            matrix[j].append(col[j])
+
+    print_matrix(matrix)
+    matrix = move_column(matrix, -(needed_vars + 1), len(matrix[0]))
+    print_matrix(matrix)
 
     #
     simplex_matrix = copy_matrix(matrix)
-    for rk in range(len(matrix)):
-        simplex_matrix[rk].extend(addition_rows[rk])
-
     return simplex_matrix
 
 
@@ -195,17 +206,6 @@ def prepare_z_str(basis_vars_equalities, needed_vars, z_str):
     m_str_equation = Eq(var_terms, -const_terms)
 
     return z_str_equation, m_str_equation
-
-
-def move_column(matrix, from_idx, to_idx):
-    for row in matrix:
-        col = row.pop(from_idx)
-        row.insert(to_idx, col)
-    return matrix
-
-
-def sympy_to_frac(n):
-    return Fraction(int(n))
 
 
 def prepare_simplex_matrix(simplex_matrix, z_str_eq, m_str_eq):
@@ -302,9 +302,16 @@ def artificial_variable_simplex(
         for ck in range(1, len_src_matrix):
             if ck in answer:
                 continue
+            # if not m_row_deleted:
+            #     if simplex_matrix_copy[-2][ck] == Fraction(0):
+            #         many_answers = True
+            #         break
             if simplex_matrix_copy[-1][ck] == Fraction(0):
                 many_answers = True
                 break
+
+        if many_answers:
+            print("YES")
 
         if optimal and not many_answers:
             break
@@ -464,7 +471,7 @@ def solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH="./answer/answer
 
 def main() -> None:
     MATRIX_DIR = "0_zlp"
-    TASK_ID = "pr_task10"
+    TASK_ID = "pr_task9"
 
     MATRIX = read_matrix_from_file(f"{MATRIX_DIR}/{TASK_ID}.txt")
 
