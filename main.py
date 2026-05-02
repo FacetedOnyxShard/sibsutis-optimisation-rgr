@@ -214,6 +214,7 @@ def prepare_simplex_matrix(simplex_matrix, z_str_eq, m_str_eq):
     return full_simplex_matrix
 
 
+# добавить базисную переменную из исходной матрицы
 def artificial_variable_simplex(simplex_matrix, len_src_matrix, basis_cols):
     simplex_matrix_copy = copy_matrix(simplex_matrix)
     len_simplex_values = len(simplex_matrix[0]) - 1
@@ -222,8 +223,6 @@ def artificial_variable_simplex(simplex_matrix, len_src_matrix, basis_cols):
     intermediate_matrices.append(simplex_matrix)
 
     answer = basis_cols
-
-    # добавить базисную переменную из исходной матрицы
 
     while True:
         # условие выхода (нужна проверка Z строки) и другие проверки для M строки
