@@ -266,6 +266,7 @@ def artificial_variable_simplex(
 
     removed_cols_count = 0
     m_row_deleted = False
+    is_correct = True
     while True:
         # условие выхода (нужна проверка Z строки) и другие проверки для M строки
         all_zeroes = True
@@ -352,9 +353,10 @@ def artificial_variable_simplex(
             if simplex_matrix_copy[min_rk][col] == Fraction(1):
                 col_to_remove = col
                 break
-        for i in range(len(answer)):
-            if col_to_remove <= answer[i]:
-                answer[i] -= 1
+        if col_to_remove in additional_basis:
+            for i in range(len(answer)):
+                if col_to_remove <= answer[i]:
+                    answer[i] -= 1
         answer[min_rk] = min_ck
 
         # выбранный элемент разрешающий делаем жорданово преобразование относительно его
@@ -373,10 +375,10 @@ def artificial_variable_simplex(
         simplex_matrix_copy = copy_matrix(new_simplex_matrix)
 
     # проверка на остаток искусственных в базисе
-    is_correct = True
-    last_in_basis = find_basis_variables_in_simplex(simplex_matrix_copy)
-    if has_intersection(basis_cols, last_in_basis):
-        is_correct = False
+    if is_correct:
+        last_in_basis = find_basis_variables_in_simplex(simplex_matrix_copy)
+        if has_intersection(basis_cols, last_in_basis):
+            is_correct = False
 
     # если перменная ИБ вышла из базиса вычеркиваем столбец этой переменной
     # если M строка занулилась вычеркиваем M строку
@@ -462,7 +464,7 @@ def solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH="./answer/answer
 
 def main() -> None:
     MATRIX_DIR = "0_zlp"
-    TASK_ID = "pr_task8"
+    TASK_ID = "pr_task10"
 
     MATRIX = read_matrix_from_file(f"{MATRIX_DIR}/{TASK_ID}.txt")
 
