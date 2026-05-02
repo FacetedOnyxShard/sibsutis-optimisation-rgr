@@ -271,6 +271,8 @@ def artificial_variable_simplex(simplex_matrix, len_src_matrix, basis_cols):
     return simplex_matrix_copy, answer
 
 
+# бесконечно много решений, когда под свободной переменной в Z или M строке 0
+# нет решений, когда мы не можем выбрать строку или столбец
 def get_answer_from_matrix(answer_matrix, z_str_eq, answer_idxs):
     values = []
     for rk in range(len(answer_matrix) - 2):
@@ -285,8 +287,6 @@ def get_answer_from_matrix(answer_matrix, z_str_eq, answer_idxs):
     return answer
 
 
-# бесконечно много решений, когда под свободной переменной в Z или M строке 0
-# нет решений, когда мы не можем выбрать строку или столбец
 def main() -> None:
     MATRIX_DIR = "0_zlp"
     TASK_ID = "pr_task3"
