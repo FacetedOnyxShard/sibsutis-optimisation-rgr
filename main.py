@@ -10,6 +10,10 @@ from matrix import (
     read_matrix_from_file,
     calculate_elements_all_dir,
     create_or_truncate_file,
+    copy_arr,
+    write_answer_to_file,
+    solve_linear_system,
+    convert_matrix_to_json_field,
 )
 from sympy import Eq, solve, sympify, symbols, Integer, Rational
 import os
@@ -214,6 +218,9 @@ def artificial_variable_simplex(simplex_matrix, len_src_matrix, basis_cols):
     simplex_matrix_copy = copy_matrix(simplex_matrix)
     len_simplex_values = len(simplex_matrix[0]) - 1
 
+    intermediate_matrices = []
+    intermediate_matrices.append(simplex_matrix)
+
     answer = basis_cols
 
     # добавить базисную переменную из исходной матрицы
@@ -270,7 +277,7 @@ def artificial_variable_simplex(simplex_matrix, len_src_matrix, basis_cols):
             simplex_matrix_copy, new_simplex_matrix, min_rk, min_ck
         )
 
-        print_matrix(new_simplex_matrix)
+        intermediate_matrices.append(new_simplex_matrix)
 
         simplex_matrix_copy = copy_matrix(new_simplex_matrix)
 
@@ -280,21 +287,23 @@ def artificial_variable_simplex(simplex_matrix, len_src_matrix, basis_cols):
     # если (решение_оптимально и не_вышла_из_базиса(переменная_ИБ)) система несовместна
     # если (нет_м_строки() и коэфициенты_з_положительны()) решение найдено
     # пока (есть_м_строка() или коэфициенты_з_положительны())
-    return simplex_matrix_copy, answer
+    return simplex_matrix_copy, answer, intermediate_matrices
 
 
 # бесконечно много решений, когда под свободной переменной в Z или M строке 0
 # нет решений, когда мы не можем выбрать строку или столбец
-def get_answer_from_matrix(answer_matrix, z_str_eq, answer_idxs):
+def get_answer_from_matrix(answer_matrix, z_str_eq, answer_idxs, initial_z_str):
     values = []
     for rk in range(len(answer_matrix) - 2):
         values.append(answer_matrix[rk][0])
 
     k = 0
-    answer = [Fraction(0)] * 7
+    answer = [Fraction(0)] * (len(initial_z_str) - 1)
     for val in values:
         answer[answer_idxs[k] - 1] = val
         k += 1
+
+    answer.append(answer_matrix[-2][0])
 
     return answer
 
@@ -313,6 +322,7 @@ def main() -> None:
 
     MATRIX = prepare_matrix(MATRIX)
     Z_STR = MATRIX.pop()
+    INITIAL_Z_STR = copy_arr(Z_STR)
 
     # находим переменные которые уже образуют базис
     basis_list = find_basis_variables(MATRIX)
@@ -331,25 +341,24 @@ def main() -> None:
     full_simplex_matrix = prepare_simplex_matrix(simplex_matrix, z_str_eq, m_str_eq)
 
     # решаем симплекс методом с M строкой
-    answer_matrix, answer_idxs = artificial_variable_simplex(
+    answer_matrix, answer_idxs, intermediate_matrices = artificial_variable_simplex(
         full_simplex_matrix, len(MATRIX[0]), basis_cols
     )
 
-    # получаем ответ
-    answer = get_answer_from_matrix(answer_matrix, z_str_eq, answer_idxs)
+    # получаем ответ,
+    # одна строка последний элемент, то чему равно Z
+    answer = get_answer_from_matrix(answer_matrix, z_str_eq, answer_idxs, INITIAL_Z_STR)
+    z_value = answer.pop()
 
-    print()
-    print_matrix([answer])
+    answer_object = {"answer": answer, "z_value": z_value}
 
-    # answer_obj, intermediate_matrices = solve_linear_system(MATRIX)
+    full_answer = {}
+    for matrix in intermediate_matrices:
+        key, value = convert_matrix_to_json_field(matrix)
+        full_answer[key] = value
+    full_answer["solution"] = answer_object
 
-    # full_answer = {}
-    # for matrix in intermediate_matrices:
-    #     key, value = convert_matrix_to_json_field(matrix)
-    #     full_answer[key] = value
-    # full_answer["solution"] = answer_obj
-
-    # write_answer_to_file(ANSWERS_FILEPATH, full_answer)
+    write_answer_to_file(ANSWERS_FILEPATH, full_answer)
 
 
 if __name__ == "__main__":
