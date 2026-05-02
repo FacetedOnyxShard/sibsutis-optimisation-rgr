@@ -308,22 +308,7 @@ def get_answer_from_matrix(answer_matrix, z_str_eq, answer_idxs, initial_z_str):
     return answer
 
 
-def main() -> None:
-    MATRIX_DIR = "0_zlp"
-    TASK_ID = "pr_task3"
-
-    MATRIX = read_matrix_from_file(f"{MATRIX_DIR}/{TASK_ID}.txt")
-
-    DIR_FOR_ANSWERS = "answer"
-    ANSWERS_FILEPATH = f"./{DIR_FOR_ANSWERS}/answer.json"
-
-    os.makedirs(DIR_FOR_ANSWERS, exist_ok=True)
-    create_or_truncate_file(ANSWERS_FILEPATH)
-
-    MATRIX = prepare_matrix(MATRIX)
-    Z_STR = MATRIX.pop()
-    INITIAL_Z_STR = copy_arr(Z_STR)
-
+def solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH="./answer/answer.json"):
     # находим переменные которые уже образуют базис
     basis_list = find_basis_variables(MATRIX)
 
@@ -350,7 +335,11 @@ def main() -> None:
     answer = get_answer_from_matrix(answer_matrix, z_str_eq, answer_idxs, INITIAL_Z_STR)
     z_value = answer.pop()
 
-    answer_object = {"answer": answer, "z_value": z_value}
+    answer_object = {
+        "answer_comment": "единственное решение",
+        "answer": answer,
+        "z_value": z_value,
+    }
 
     full_answer = {}
     for matrix in intermediate_matrices:
@@ -359,6 +348,25 @@ def main() -> None:
     full_answer["solution"] = answer_object
 
     write_answer_to_file(ANSWERS_FILEPATH, full_answer)
+
+
+def main() -> None:
+    MATRIX_DIR = "0_zlp"
+    TASK_ID = "pr_task3"
+
+    MATRIX = read_matrix_from_file(f"{MATRIX_DIR}/{TASK_ID}.txt")
+
+    DIR_FOR_ANSWERS = "answer"
+    ANSWERS_FILEPATH = f"./{DIR_FOR_ANSWERS}/answer.json"
+
+    os.makedirs(DIR_FOR_ANSWERS, exist_ok=True)
+    create_or_truncate_file(ANSWERS_FILEPATH)
+
+    MATRIX = prepare_matrix(MATRIX)
+    Z_STR = MATRIX.pop()
+    INITIAL_Z_STR = copy_arr(Z_STR)
+
+    solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH)
 
 
 if __name__ == "__main__":
