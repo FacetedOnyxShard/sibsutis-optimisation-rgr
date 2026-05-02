@@ -1,6 +1,18 @@
-from matrix import *
-from sympy import Poly
-import sympy as sp
+from fraction import Fraction
+from matrix import (
+    create_linear_expression,
+    frac_to_sympy,
+    copy_matrix,
+    create_linear_expression_with_start,
+    create_x_map,
+    transform_matrix,
+    print_matrix,
+    read_matrix_from_file,
+    calculate_elements_all_dir,
+    create_or_truncate_file,
+)
+from sympy import Eq, solve, sympify, symbols, Integer, Rational
+import os
 
 
 def prepare_matrix(matrix):
