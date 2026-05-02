@@ -98,3 +98,9 @@ def test_problem8():
         "z_value": "15",
     }
     assert result["solution"] == expected
+
+
+def test_problem10():  # нельзя выбрать СО
+    result = run_solver("pr_task10")
+    expected = {"answer_comment": "Система ограничений не совместна"}
+    assert result["solution"] == expected
