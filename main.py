@@ -259,8 +259,8 @@ def artificial_variable_simplex(simplex_matrix, len_src_matrix, basis_cols):
                 break
 
         z_str_positive = True
-        for i in range(len(simplex_matrix[-2])):
-            if simplex_matrix[-2][i] < Fraction(0):
+        for i in range(1, len_src_matrix):
+            if simplex_matrix_copy[-2][i] < Fraction(0):
                 z_str_positive = False
                 break
 
@@ -270,11 +270,22 @@ def artificial_variable_simplex(simplex_matrix, len_src_matrix, basis_cols):
         if all_zeroes:
             second_phase = True
 
-        # симплекс метод с M строкой
-        # выбираем столбец (самое большое отрицательное число среди коэффициентов)
         det_row = -1  # m str
         if second_phase:
             det_row = -2  # z str
+
+        # проверяем на оптимальность
+        optimal = True
+        for ck in range(1, len(simplex_matrix_copy[det_row])):
+            if simplex_matrix_copy[det_row][ck] < Fraction(0):
+                optimal = False
+                break
+
+        if optimal:
+            break
+
+        # симплекс метод с M строкой
+        # выбираем столбец (самое большое отрицательное число среди коэффициентов)
         min_in_last_row = simplex_matrix_copy[det_row][1]
         min_ck = 1
         for ck in range(2, len(simplex_matrix_copy[det_row])):
@@ -318,15 +329,6 @@ def artificial_variable_simplex(simplex_matrix, len_src_matrix, basis_cols):
         print_matrix(new_simplex_matrix)
 
         simplex_matrix_copy = copy_matrix(new_simplex_matrix)
-
-        optimal = True
-        for ck in range(1, len(new_simplex_matrix[-1])):
-            if new_simplex_matrix[-1][ck] < Fraction(0):
-                optimal = False
-                break
-
-        if optimal:
-            break
 
     # проверка на остаток искусственных в базисе
     is_correct = True
@@ -415,7 +417,7 @@ def solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH="./answer/answer
 
 def main() -> None:
     MATRIX_DIR = "0_zlp"
-    TASK_ID = "pr_task8"
+    TASK_ID = "pr_task3"
 
     MATRIX = read_matrix_from_file(f"{MATRIX_DIR}/{TASK_ID}.txt")
 

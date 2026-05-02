@@ -74,14 +74,14 @@ def test_problem5():
     assert result["solution"] == expected
 
 
-# def test_problem6():
-#     result = run_solver("pr_task6")
-#     expected = {
-#         "answer_comment": "единственное решение",
-#         "answer": ["0", "6", "0", "4"],
-#         "z_value": "42",
-#     }
-#     assert result["solution"] == expected
+def test_problem6():
+    result = run_solver("pr_task6")
+    expected = {
+        "answer_comment": "единственное решение",
+        "answer": ["0", "6", "0", "4"],
+        "z_value": "42",
+    }
+    assert result["solution"] == expected
 
 
 # def test_problem7():
