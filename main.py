@@ -27,10 +27,13 @@ def prepare_matrix(matrix):
 def is_basis_col(ck, matrix):
     row_sum = Fraction(0)
     for rk in range(len(matrix)):
-        row_sum += abs(matrix[rk][ck])
-        if row_sum > Fraction(1):
+        if matrix[rk][ck] == Fraction(1):
+            row_sum += abs(matrix[rk][ck])
+            if row_sum > Fraction(1):
+                return False
+        elif matrix[rk][ck] != Fraction(0):
             return False
-    return True
+    return row_sum == Fraction(1)
 
 
 def find_basis_variables_in_simplex(matrix):
@@ -235,6 +238,15 @@ def prepare_simplex_matrix(simplex_matrix, z_str_eq, m_str_eq):
 def has_intersection(arr1, arr2):
     """Возвращает True, если есть общие элементы"""
     return bool(set(arr1) & set(arr2))
+
+
+def remove_column(matrix, col_idx):
+    """
+    Удаляет столбец с индексом col_idx из матрицы (списка списков)
+    """
+    for row in matrix:
+        del row[col_idx]
+    return matrix
 
 
 # добавить базисную переменную из исходной матрицы
