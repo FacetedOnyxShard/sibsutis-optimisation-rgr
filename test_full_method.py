@@ -68,10 +68,10 @@ def test_problem3():
 #     assert result["solution"] == expected
 
 
-# def test_problem5():
-#     result = run_solver("pr_task5")
-#     expected = {"answer_comment": "Система ограничений не совместна"}
-#     assert result["solution"] == expected
+def test_problem5():
+    result = run_solver("pr_task5")
+    expected = {"answer_comment": "Система ограничений не совместна"}
+    assert result["solution"] == expected
 
 
 # def test_problem6():
@@ -90,11 +90,11 @@ def test_problem3():
 #     assert result["solution"] == expected
 
 
-# def test_problem8():
-#     result = run_solver("pr_task8")
-#     expected = {
-#         "answer_comment": "единственное решение",
-#         "answer": ["5/2", "5/2", "5/2", "0"],
-#         "z_value": "15",
-#     }
-#     assert result["solution"] == expected
+def test_problem8():
+    result = run_solver("pr_task8")
+    expected = {
+        "answer_comment": "единственное решение",
+        "answer": ["5/2", "5/2", "5/2", "0"],
+        "z_value": "15",
+    }
+    assert result["solution"] == expected

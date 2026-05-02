@@ -33,11 +33,27 @@ def is_basis_col(ck, matrix):
     return True
 
 
+def find_basis_variables_in_simplex(matrix):
+    basis_vars = []
+
+    for ck in range(1, len(matrix[0])):
+        if matrix[0][ck] != Fraction(1) and matrix[0][ck] != Fraction(0):
+            continue
+
+        basis_var = is_basis_col(ck, matrix)
+
+        if not basis_var:
+            continue
+        basis_vars.append(ck)
+
+    return basis_vars
+
+
 def find_basis_variables(matrix):
     basis_vars = []
 
     for ck in range(len(matrix[0]) - 1):
-        if matrix[0][ck] != Fraction(0):
+        if matrix[0][ck] != Fraction(1) and matrix[0][ck] != Fraction(0):
             continue
 
         basis_var = is_basis_col(ck, matrix)
@@ -52,6 +68,8 @@ def find_basis_variables(matrix):
 def derive_basis_vars(matrix):
     # ищем столбцы с базисными переменными
     basis_cols = []
+
+    print_matrix(matrix)
 
     for ck in range(len(matrix[0]) - 1):
         if not (matrix[0][ck] == Fraction(0) or matrix[0][ck] == Fraction(1)):
@@ -87,7 +105,7 @@ def add_basis_vars(const_matrix, needed_vars, basis_list):
     basis_rows = []
 
     for ck in basis_list:
-        for rk in len(matrix):
+        for rk in range(len(matrix)):
             if matrix[rk][ck] == Fraction(1):
                 basis_rows.append(rk)
                 break
@@ -133,8 +151,8 @@ def prepare_z_str(basis_vars_equalities, needed_vars, z_str):
 
     for i in range(len(basis_vars_equalities) - needed_vars):
         z_str_equation = z_str_equation.subs(
-            sympify(basis_vars_equalities[i]["base"]),
-            basis_vars_equalities[i]["equation"],
+            basis_vars_equalities[i]["base"],
+            basis_vars_equalities[i]["equation"][0],
         )
 
     var_terms = sum(
@@ -214,6 +232,11 @@ def prepare_simplex_matrix(simplex_matrix, z_str_eq, m_str_eq):
     return full_simplex_matrix
 
 
+def has_intersection(arr1, arr2):
+    """Возвращает True, если есть общие элементы"""
+    return bool(set(arr1) & set(arr2))
+
+
 # добавить базисную переменную из исходной матрицы
 def artificial_variable_simplex(simplex_matrix, len_src_matrix, basis_cols):
     simplex_matrix_copy = copy_matrix(simplex_matrix)
@@ -221,8 +244,11 @@ def artificial_variable_simplex(simplex_matrix, len_src_matrix, basis_cols):
 
     intermediate_matrices = []
     intermediate_matrices.append(simplex_matrix)
+    print_matrix(simplex_matrix)
 
-    answer = basis_cols
+    answer = copy_arr(basis_cols)
+
+    second_phase = False
 
     while True:
         # условие выхода (нужна проверка Z строки) и другие проверки для M строки
@@ -232,16 +258,28 @@ def artificial_variable_simplex(simplex_matrix, len_src_matrix, basis_cols):
                 all_zeroes = False
                 break
 
-        if all_zeroes:
+        z_str_positive = True
+        for i in range(len(simplex_matrix[-2])):
+            if simplex_matrix[-2][i] < Fraction(0):
+                z_str_positive = False
+                break
+
+        if all_zeroes and z_str_positive:
             break
+
+        if all_zeroes:
+            second_phase = True
 
         # симплекс метод с M строкой
         # выбираем столбец (самое большое отрицательное число среди коэффициентов)
-        min_in_m = simplex_matrix_copy[-1][1]
+        det_row = -1  # m str
+        if second_phase:
+            det_row = -2  # z str
+        min_in_last_row = simplex_matrix_copy[det_row][1]
         min_ck = 1
-        for ck in range(2, len(simplex_matrix_copy[-1])):
-            if simplex_matrix_copy[-1][ck] < min_in_m:
-                min_in_m = simplex_matrix_copy[-1][ck]
+        for ck in range(2, len(simplex_matrix_copy[det_row])):
+            if simplex_matrix_copy[det_row][ck] < min_in_last_row:
+                min_in_last_row = simplex_matrix_copy[det_row][ck]
                 min_ck = ck
 
         # выбираем строку (самое маленькое симплексное отношение)
@@ -277,8 +315,24 @@ def artificial_variable_simplex(simplex_matrix, len_src_matrix, basis_cols):
         )
 
         intermediate_matrices.append(new_simplex_matrix)
+        print_matrix(new_simplex_matrix)
 
         simplex_matrix_copy = copy_matrix(new_simplex_matrix)
+
+        optimal = True
+        for ck in range(1, len(new_simplex_matrix[-1])):
+            if new_simplex_matrix[-1][ck] < Fraction(0):
+                optimal = False
+                break
+
+        if optimal:
+            break
+
+    # проверка на остаток искусственных в базисе
+    is_correct = True
+    last_in_basis = find_basis_variables_in_simplex(simplex_matrix_copy)
+    if has_intersection(basis_cols, last_in_basis):
+        is_correct = False
 
     # если перменная ИБ вышла из базиса вычеркиваем столбец этой переменной
     # если M строка занулилась вычеркиваем M строку
@@ -286,7 +340,7 @@ def artificial_variable_simplex(simplex_matrix, len_src_matrix, basis_cols):
     # если (решение_оптимально и не_вышла_из_базиса(переменная_ИБ)) система несовместна
     # если (нет_м_строки() и коэфициенты_з_положительны()) решение найдено
     # пока (есть_м_строка() или коэфициенты_з_положительны())
-    return simplex_matrix_copy, answer, intermediate_matrices
+    return simplex_matrix_copy, answer, intermediate_matrices, is_correct
 
 
 # бесконечно много решений, когда под свободной переменной в Z или M строке 0
@@ -324,21 +378,31 @@ def solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH="./answer/answer
     # готовим симплекс матрицу
     full_simplex_matrix = prepare_simplex_matrix(simplex_matrix, z_str_eq, m_str_eq)
 
+    # нужно изменить basis_cols, так как поменялась матрица
+    for i in range(len(basis_cols)):
+        basis_cols[i] += 1
+
     # решаем симплекс методом с M строкой
-    answer_matrix, answer_idxs, intermediate_matrices = artificial_variable_simplex(
-        full_simplex_matrix, len(MATRIX[0]), basis_cols
+    answer_matrix, answer_idxs, intermediate_matrices, is_correct = (
+        artificial_variable_simplex(full_simplex_matrix, len(MATRIX[0]), basis_cols)
     )
 
     # получаем ответ,
     # одна строка последний элемент, то чему равно Z
-    answer = get_answer_from_matrix(answer_matrix, z_str_eq, answer_idxs, INITIAL_Z_STR)
-    z_value = answer.pop()
+    answer_object = None
+    if is_correct:
+        answer = get_answer_from_matrix(
+            answer_matrix, z_str_eq, answer_idxs, INITIAL_Z_STR
+        )
+        z_value = answer.pop()
 
-    answer_object = {
-        "answer_comment": "единственное решение",
-        "answer": answer,
-        "z_value": z_value,
-    }
+        answer_object = {
+            "answer_comment": "единственное решение",
+            "answer": answer,
+            "z_value": z_value,
+        }
+    else:
+        answer_object = {"answer_comment": "Система ограничений не совместна"}
 
     full_answer = {}
     for matrix in intermediate_matrices:
@@ -351,7 +415,7 @@ def solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH="./answer/answer
 
 def main() -> None:
     MATRIX_DIR = "0_zlp"
-    TASK_ID = "pr_task3"
+    TASK_ID = "pr_task8"
 
     MATRIX = read_matrix_from_file(f"{MATRIX_DIR}/{TASK_ID}.txt")
 
