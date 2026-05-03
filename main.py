@@ -160,9 +160,13 @@ def prepare_z_str(basis_vars_equalities, needed_vars, z_str):
     expression = create_linear_expression(len(z_str) - 1)
     z_str_equation = Eq(expression, frac_to_sympy(z_str[-1]))
 
-    for j, value in enumerate(z_str):
-        z_str_equation = z_str_equation.subs(f"k{j + 1}", frac_to_sympy(value))
+    # подставляем коэффициенты в Z
+    for j in range(len(z_str) - 1):
+        z_str_equation = z_str_equation.subs(f"k{j + 1}", frac_to_sympy(z_str[j]))
 
+    print(z_str_equation)
+
+    # выводим базисные переменные через свободные Z
     for i in range(len(basis_vars_equalities) - needed_vars):
         z_str_equation = z_str_equation.subs(
             basis_vars_equalities[i]["base"],
@@ -267,8 +271,15 @@ def artificial_variable_simplex(
     removed_cols_count = 0
     m_row_deleted = False
     is_correct = True
+    second_matrix_found = False
+    first_matrix = None
+    second_matrix = None
+    many_answers = False
+    min_ck = None
+    min_rk = None
+
     while True:
-        # условие выхода (нужна проверка Z строки) и другие проверки для M строки
+        # условия выхода
         all_zeroes = True
         if not m_row_deleted:
             for i in range(len(simplex_matrix_copy[-1])):
@@ -288,9 +299,6 @@ def artificial_variable_simplex(
                     z_str_positive = False
                     break
 
-        if m_row_deleted and z_str_positive:
-            break
-
         # проверяем на оптимальность
         optimal = True
         for ck in range(1, len(simplex_matrix_copy[-1])):
@@ -298,32 +306,45 @@ def artificial_variable_simplex(
                 optimal = False
                 break
 
-        many_answers = False
-        for ck in range(1, len_src_matrix):
-            if ck in answer:
-                continue
-            # if not m_row_deleted:
-            #     if simplex_matrix_copy[-2][ck] == Fraction(0):
-            #         many_answers = True
-            #         break
-            if simplex_matrix_copy[-1][ck] == Fraction(0):
-                many_answers = True
-                break
+        if optimal:
+            many_answers = False
+            for ck in range(1, len_src_matrix):
+                if ck in answer:
+                    continue
+                # if not m_row_deleted:
+                #     if simplex_matrix_copy[-2][ck] == Fraction(0):
+                #         many_answers = True
+                #         break
+                if simplex_matrix_copy[-1][ck] == Fraction(0):
+                    many_answers = True
+                    min_ck = ck
+                    break
+
+        if second_matrix_found:
+            second_matrix = copy_matrix(simplex_matrix_copy)
+            break
 
         if many_answers:
-            print("YES")
+            second_matrix_found = False
+            first_matrix = copy_matrix(simplex_matrix_copy)
 
         if optimal and not many_answers:
             break
 
-        # симплекс метод с M строкой
-        # выбираем столбец (самое большое отрицательное число среди коэффициентов)
-        min_in_last_row = simplex_matrix_copy[-1][1]
-        min_ck = 1
-        for ck in range(2, len(simplex_matrix_copy[-1])):
-            if simplex_matrix_copy[-1][ck] < min_in_last_row:
-                min_in_last_row = simplex_matrix_copy[-1][ck]
-                min_ck = ck
+        if m_row_deleted and z_str_positive and not many_answers:
+            break
+
+        if not many_answers:
+            # симплекс метод с M строкой
+            # выбираем столбец (самое большое отрицательное число среди коэффициентов)
+            min_in_last_row = simplex_matrix_copy[-1][1]
+            min_ck = 1
+            for ck in range(2, len(simplex_matrix_copy[-1])):
+                if simplex_matrix_copy[-1][ck] < min_in_last_row:
+                    min_in_last_row = simplex_matrix_copy[-1][ck]
+                    min_ck = ck
+        else:
+            pass  # столбец был выбран при проверки на множество решений
 
         # выбираем строку (самое маленькое симплексное отношение)
         sr = []
@@ -333,6 +354,10 @@ def artificial_variable_simplex(
         for rk in range(matrix_height):  # нужно сделать вычисление из другой матрицы
             element = simplex_matrix_copy[rk][min_ck]
             if element == Fraction(0):
+                sr.append(float("inf"))
+            elif simplex_matrix_copy[rk][0] < Fraction(0) and element >= Fraction(0):
+                sr.append(float("inf"))
+            elif simplex_matrix_copy[rk][0] >= Fraction(0) and element < Fraction(0):
                 sr.append(float("inf"))
             elif simplex_matrix_copy[rk][0] / element < Fraction(0):
                 sr.append(float("inf"))
@@ -364,6 +389,7 @@ def artificial_variable_simplex(
             for i in range(len(answer)):
                 if col_to_remove <= answer[i]:
                     answer[i] -= 1
+
         answer[min_rk] = min_ck
 
         # выбранный элемент разрешающий делаем жорданово преобразование относительно его
@@ -381,11 +407,20 @@ def artificial_variable_simplex(
 
         simplex_matrix_copy = copy_matrix(new_simplex_matrix)
 
+        if many_answers and not second_matrix_found:
+            second_matrix_found = True
+
     # проверка на остаток искусственных в базисе
     if is_correct:
         last_in_basis = find_basis_variables_in_simplex(simplex_matrix_copy)
         if has_intersection(basis_cols, last_in_basis):
             is_correct = False
+
+    # для множества ответов
+    second_answer_matrix = None
+    if many_answers:
+        simplex_matrix_copy = first_matrix
+        second_answer_matrix = second_matrix
 
     # если перменная ИБ вышла из базиса вычеркиваем столбец этой переменной
     # если M строка занулилась вычеркиваем M строку
@@ -393,7 +428,14 @@ def artificial_variable_simplex(
     # если (решение_оптимально и не_вышла_из_базиса(переменная_ИБ)) система несовместна
     # если (нет_м_строки() и коэфициенты_з_положительны()) решение найдено
     # пока (есть_м_строка() или коэфициенты_з_положительны())
-    return simplex_matrix_copy, answer, intermediate_matrices, is_correct
+    return (
+        simplex_matrix_copy,
+        answer,
+        intermediate_matrices,
+        is_correct,
+        many_answers,
+        second_answer_matrix,
+    )
 
 
 # бесконечно много решений, когда под свободной переменной в Z или M строке 0
@@ -436,16 +478,26 @@ def solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH="./answer/answer
         basis_cols[i] += 1
 
     # решаем симплекс методом с M строкой
-    answer_matrix, answer_idxs, intermediate_matrices, is_correct = (
-        artificial_variable_simplex(
-            full_simplex_matrix, len(MATRIX[0]), basis_cols, needed_vars
-        )
+    (
+        answer_matrix,
+        answer_idxs,
+        intermediate_matrices,
+        is_correct,
+        many_answers,
+        second_answer_matrix,
+    ) = artificial_variable_simplex(
+        full_simplex_matrix, len(MATRIX[0]), basis_cols, needed_vars
     )
 
     # получаем ответ,
     # одна строка последний элемент, то чему равно Z
     answer_object = None
-    if is_correct:
+    if many_answers:
+        print("Первая матрица:")
+        print_matrix(answer_matrix)
+        print("Вторая матрица:")
+        print_matrix(second_answer_matrix)
+    elif is_correct:
         print_matrix(answer_matrix)
         answer = get_answer_from_matrix(
             answer_matrix, z_str_eq, answer_idxs, INITIAL_Z_STR
