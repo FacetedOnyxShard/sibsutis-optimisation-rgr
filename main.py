@@ -15,7 +15,16 @@ from matrix import (
     solve_linear_system,
     convert_matrix_to_json_field,
 )
-from sympy import Eq, solve, sympify, symbols, Integer, Rational
+from sympy import (
+    Eq,
+    solve,
+    sympify,
+    symbols,
+    Integer,
+    Rational,
+    Matrix,
+    pprint,
+)
 import os
 
 
@@ -277,6 +286,9 @@ def artificial_variable_simplex(
     many_answers = False
     min_ck = None
     min_rk = None
+    second_answer_idxs = None
+    second_matrix_answer_idxs = None
+    first_matrix_answer_idxs = None
 
     while True:
         # условия выхода
@@ -322,11 +334,13 @@ def artificial_variable_simplex(
 
         if second_matrix_found:
             second_matrix = copy_matrix(simplex_matrix_copy)
+            second_matrix_answer_idxs = copy_arr(answer)
             break
 
         if many_answers:
             second_matrix_found = False
             first_matrix = copy_matrix(simplex_matrix_copy)
+            first_matrix_answer_idxs = copy_arr(answer)
 
         if optimal and not many_answers:
             break
@@ -421,6 +435,8 @@ def artificial_variable_simplex(
     if many_answers:
         simplex_matrix_copy = first_matrix
         second_answer_matrix = second_matrix
+        answer = first_matrix_answer_idxs
+        second_answer_idxs = second_matrix_answer_idxs
 
     # если перменная ИБ вышла из базиса вычеркиваем столбец этой переменной
     # если M строка занулилась вычеркиваем M строку
@@ -435,18 +451,19 @@ def artificial_variable_simplex(
         is_correct,
         many_answers,
         second_answer_matrix,
+        second_answer_idxs,
     )
 
 
 # бесконечно много решений, когда под свободной переменной в Z или M строке 0
 # нет решений, когда мы не можем выбрать строку или столбец
-def get_answer_from_matrix(answer_matrix, z_str_eq, answer_idxs, initial_z_str):
+def get_answer_from_matrix(answer_matrix, answer_idxs, count_z_str_koeffs):
     values = []
     for rk in range(len(answer_matrix) - 1):
         values.append(answer_matrix[rk][0])
 
     k = 0
-    answer = [Fraction(0)] * (len(initial_z_str) - 1)
+    answer = [Fraction(0)] * count_z_str_koeffs
     for val in values:
         answer[answer_idxs[k] - 1] = val
         k += 1
@@ -454,6 +471,49 @@ def get_answer_from_matrix(answer_matrix, z_str_eq, answer_idxs, initial_z_str):
     answer.append(answer_matrix[len(values)][0])
 
     return answer
+
+
+def get_answer_from_many_matricies(
+    first_matrix,
+    first_answer_idxs,
+    second_matrix,
+    second_answer_idxs,
+    count_z_str_koeffs,
+):
+    first_answer = get_answer_from_matrix(
+        first_matrix, first_answer_idxs, count_z_str_koeffs
+    )
+    second_answer = get_answer_from_matrix(
+        second_matrix, second_answer_idxs, count_z_str_koeffs
+    )
+    z_value = first_answer.pop()
+    second_answer.pop()
+
+    print("X_n")
+    print_matrix([first_answer])
+    print("X_n+1")
+    print_matrix([second_answer])
+
+    first_sympy = [
+        Rational(fraction.numerator, fraction.denominator) for fraction in first_answer
+    ]
+    second_sympy = [
+        Rational(fraction.numerator, fraction.denominator) for fraction in second_answer
+    ]
+
+    lmbd = symbols("lambda")
+    vec1 = Matrix(first_sympy)
+    vec2 = Matrix(second_sympy)
+
+    answer = (1 - lmbd) * vec1 + lmbd * vec2
+    print(answer)
+
+    simple_answer = sympify(answer)
+    print("Simple:")
+    print(simple_answer)
+    print(str(list(simple_answer)))
+
+    return str(list(simple_answer)), z_value
 
 
 def solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH="./answer/answer.json"):
@@ -485,6 +545,7 @@ def solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH="./answer/answer
         is_correct,
         many_answers,
         second_answer_matrix,
+        second_answer_idxs,
     ) = artificial_variable_simplex(
         full_simplex_matrix, len(MATRIX[0]), basis_cols, needed_vars
     )
@@ -497,10 +558,24 @@ def solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH="./answer/answer
         print_matrix(answer_matrix)
         print("Вторая матрица:")
         print_matrix(second_answer_matrix)
+
+        answer, z_value = get_answer_from_many_matricies(
+            answer_matrix,
+            answer_idxs,
+            second_answer_matrix,
+            second_answer_idxs,
+            len(INITIAL_Z_STR) - 1,
+        )
+
+        answer_object = {
+            "answer_comment": "единственное решение",
+            "answer": answer,
+            "z_value": z_value,
+        }
     elif is_correct:
         print_matrix(answer_matrix)
         answer = get_answer_from_matrix(
-            answer_matrix, z_str_eq, answer_idxs, INITIAL_Z_STR
+            answer_matrix, answer_idxs, len(INITIAL_Z_STR) - 1
         )
         z_value = answer.pop()
 
