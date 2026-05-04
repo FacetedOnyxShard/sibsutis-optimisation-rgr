@@ -516,7 +516,27 @@ def get_answer_from_many_matricies(
     return str(list(simple_answer)), z_value
 
 
-def solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH="./answer/answer.json"):
+def is_z_min(z_row):
+    if z_row[-1] == Fraction(1):
+        return True
+    return False
+
+
+def prepare_for_z_min(matrix):
+    prepared_matrix = copy_matrix(matrix)
+    for i in range(len(prepared_matrix[-1]) - 1):
+        prepared_matrix[-1][i] = -prepared_matrix[-1][i]
+    prepared_matrix[-1][-1] = Fraction(0)
+    return prepared_matrix
+
+
+def solve_matrix(
+    MATRIX,
+    Z_STR,
+    INITIAL_Z_STR,
+    ANSWERS_FILEPATH="./answer/answer.json",
+    is_z_min_system=False,
+):
     # находим переменные которые уже образуют базис
     basis_list = find_basis_variables(MATRIX)
 
@@ -567,6 +587,9 @@ def solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH="./answer/answer
             len(INITIAL_Z_STR) - 1,
         )
 
+        if is_z_min_system:
+            z_value = -z_value
+
         answer_object = {
             "answer_comment": "единственное решение",
             "answer": answer,
@@ -578,6 +601,9 @@ def solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH="./answer/answer
             answer_matrix, answer_idxs, len(INITIAL_Z_STR) - 1
         )
         z_value = answer.pop()
+
+        if is_z_min_system:
+            z_value = -z_value
 
         answer_object = {
             "answer_comment": "единственное решение",
@@ -596,9 +622,22 @@ def solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH="./answer/answer
     write_answer_to_file(ANSWERS_FILEPATH, full_answer)
 
 
+def all_prepares_for_matrix(MATRIX):
+    matrix_z_row = MATRIX[-1]
+    is_z_min_system = is_z_min(matrix_z_row)
+    if is_z_min_system:
+        MATRIX = prepare_for_z_min(MATRIX)
+
+    MATRIX = prepare_matrix(MATRIX)
+    Z_STR = MATRIX.pop()
+    INITIAL_Z_STR = copy_arr(Z_STR)
+
+    return MATRIX, Z_STR, INITIAL_Z_STR, is_z_min_system
+
+
 def main() -> None:
     MATRIX_DIR = "0_zlp"
-    TASK_ID = "pr_task9"
+    TASK_ID = "pr_task1"
 
     MATRIX = read_matrix_from_file(f"{MATRIX_DIR}/{TASK_ID}.txt")
 
@@ -608,11 +647,9 @@ def main() -> None:
     os.makedirs(DIR_FOR_ANSWERS, exist_ok=True)
     create_or_truncate_file(ANSWERS_FILEPATH)
 
-    MATRIX = prepare_matrix(MATRIX)
-    Z_STR = MATRIX.pop()
-    INITIAL_Z_STR = copy_arr(Z_STR)
+    MATRIX, Z_STR, INITIAL_Z_STR, is_z_min_system = all_prepares_for_matrix(MATRIX)
 
-    solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH)
+    solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, ANSWERS_FILEPATH, is_z_min_system)
 
 
 if __name__ == "__main__":

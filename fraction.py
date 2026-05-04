@@ -53,6 +53,10 @@ class Fraction:
 
         return numerator
 
+    def __neg__(self):
+        self.numerator = -self.numerator
+        return self
+
     def __add__(self, other):
         self.__check_type(other)
 

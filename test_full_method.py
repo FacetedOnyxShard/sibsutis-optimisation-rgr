@@ -9,6 +9,7 @@ from main import (
     copy_arr,
     read_matrix_from_file,
     create_or_truncate_file,
+    all_prepares_for_matrix,
 )
 
 MATRIX_DIR = "0_zlp"
@@ -23,29 +24,29 @@ def setup_answer_dir():
 def run_solver(task_id):
     MATRIX = read_matrix_from_file(f"{MATRIX_DIR}/{task_id}.txt")
     setup_answer_dir()
-    MATRIX = prepare_matrix(MATRIX)
-    Z_STR = MATRIX.pop()
-    INITIAL_Z_STR = copy_arr(Z_STR)
-    solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR)
     result_path = f"./{DIR_FOR_ANSWERS}/answer.json"
+
+    MATRIX, Z_STR, INITIAL_Z_STR, is_z_min_system = all_prepares_for_matrix(MATRIX)
+    solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, result_path, is_z_min_system)
+
     with open(result_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
-# def test_problem1():
-#     result = run_solver("pr_task1")
-#     expected = {
-#         "answer_comment": "единственное решение",
-#         "answer": ["1", "0", "2"],
-#         "z_value": "3",
-#     }
-#     assert result["solution"] == expected
+def test_problem1():
+    result = run_solver("pr_task1")
+    expected = {
+        "answer_comment": "единственное решение",
+        "answer": ["1", "0", "2"],
+        "z_value": "3",
+    }
+    assert result["solution"] == expected
 
 
-# def test_problem2():
-#     result = run_solver("pr_task2")
-#     expected = {"answer_comment": "Система ограничений не совместна"}
-#     assert result["solution"] == expected
+def test_problem2():
+    result = run_solver("pr_task2")
+    expected = {"answer_comment": "Система ограничений не совместна"}
+    assert result["solution"] == expected
 
 
 def test_problem3():
@@ -96,6 +97,16 @@ def test_problem8():
         "answer_comment": "единственное решение",
         "answer": ["5/2", "5/2", "5/2", "0"],
         "z_value": "15",
+    }
+    assert result["solution"] == expected
+
+
+def test_problem9():
+    result = run_solver("pr_task9")
+    expected = {
+        "answer_comment": "единственное решение",
+        "answer": "[7*lambda/4 + 5/4, 7*lambda/4 + 21/4, 7/2 - 7*lambda/2, 7*lambda/2 + 35/2, 7*lambda, 0]",
+        "z_value": "4",
     }
     assert result["solution"] == expected
 
