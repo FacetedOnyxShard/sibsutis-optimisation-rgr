@@ -644,7 +644,7 @@ def all_prepares_for_matrix(MATRIX):
 
 def main() -> None:
     MATRIX_DIR = "0_zlp"
-    TASK_ID = "pr_task4"
+    TASK_ID = "pr08_task1"
 
     MATRIX = read_matrix_from_file(f"{MATRIX_DIR}/{TASK_ID}.txt")
 

@@ -106,3 +106,103 @@ def test_problem10():  # нельзя выбрать СО
     result = run_solver("pr_task10")
     expected = {"answer_comment": "Система ограничений не совместна"}
     assert result["solution"] == expected
+
+
+def test_pr07_problem7():
+    result = run_solver("pr07_task7")
+    expected = {
+        "answer_comment": "единственное решение",
+        "answer": ["2", "0", "0", "0", "3", "0", "0"],
+        "z_value": "3",
+    }
+    assert result["solution"] == expected
+
+
+def test_pr07_problem8():
+    result = run_solver("pr07_task8")
+    expected = {
+        "answer_comment": "единственное решение",
+        "answer": ["3", "1", "0", "0", "0", "0", "0"],
+        "z_value": "14",
+    }
+    assert result["solution"] == expected
+
+
+def test_pr07_problem9():
+    result = run_solver("pr07_task9")
+    expected = {
+        "answer_comment": "единственное решение",
+        "answer": ["5", "0", "4", "0", "0", "0"],
+        "z_value": "14",
+    }
+    assert result["solution"] == expected
+
+
+def test_pr07_problem10():
+    result = run_solver("pr07_task10")
+    expected = {
+        "answer_comment": "единственное решение",
+        "answer": ["4", "3", "0", "0", "0", "0", "0"],
+        "z_value": "7",
+    }
+    assert result["solution"] == expected
+
+
+def test_pr08_problem1():
+    result = run_solver("pr08_task1")
+    expected = {
+        "answer_comment": "единственное решение",
+        "answer": ["20", "0", "23", "65", "0"],
+        "z_value": "20",
+    }
+    assert result["solution"] == expected
+
+
+def test_pr08_problem2():
+    result = run_solver("pr08_task2")
+    expected = {
+        "answer_comment": "единственное решение",
+        "answer": ["0", "4", "2", "2", "0", "0"],
+        "z_value": "12",
+    }
+    assert result["solution"] == expected
+
+
+def test_pr08_problem3():
+    result = run_solver("pr08_task3")
+    expected = {
+        "answer_comment": "единственное решение",
+        "answer": ["0", "10", "0", "0", "10", "20"],
+        "z_value": "20",
+    }
+    assert result["solution"] == expected
+
+
+def test_pr08_problem4():
+    result = run_solver("pr08_task4")
+    expected = {
+        "answer_comment": "единственное решение",
+        "answer": ["20", "0", "0", "16", "48", "0"],
+        "z_value": "20",
+    }
+    assert result["solution"] == expected
+
+
+def test_pr08_problem5():
+    result = run_solver("pr08_task5")
+    expected = {
+        "answer_comment": "единственное решение",
+        "answer": ["0", "12", "0", "54", "40", "0"],
+        "z_value": "12",
+    }
+    assert result["solution"] == expected
+
+
+def test_pr08_problem6():
+    result = run_solver("pr08_task6")
+    expected = {
+        "answer_comment": "единственное решение",
+        "answer": ["0", "0", "15", "0", "76", "96"],
+        "z_value": "15",
+    }
+    assert result["solution"] == expected
