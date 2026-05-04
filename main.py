@@ -90,7 +90,7 @@ def find_basis_variables(matrix):
 
 def derive_basis_vars(matrix):
     # ищем столбцы с базисными переменными
-    basis_cols = []
+    basis_cols = [0] * len(matrix)
 
     print_matrix(matrix)
 
@@ -99,7 +99,10 @@ def derive_basis_vars(matrix):
             continue
 
         if is_basis_col(ck, matrix):
-            basis_cols.append(ck)
+            for rk in range(len(matrix)):
+                if matrix[rk][ck] == Fraction(1):
+                    basis_cols[rk] = ck
+                    break
 
     # выводим
     equalities = []
@@ -162,8 +165,11 @@ def add_basis_vars(const_matrix, needed_vars, basis_list):
 
 def prepare_z_str(basis_vars_equalities, needed_vars, z_str):
     m_basis = []
+    sorted_basis_vars_equalities = sorted(
+        basis_vars_equalities, key=lambda x: x["base"]
+    )
     for i in range(needed_vars):
-        m_basis.append(basis_vars_equalities[-(i + 1)])
+        m_basis.append(sorted_basis_vars_equalities[-(i + 1)])
 
     # составляем из Z sympy
     expression = create_linear_expression(len(z_str) - 1)
@@ -176,10 +182,10 @@ def prepare_z_str(basis_vars_equalities, needed_vars, z_str):
     print(z_str_equation)
 
     # выводим базисные переменные через свободные Z
-    for i in range(len(basis_vars_equalities) - needed_vars):
+    for i in range(len(sorted_basis_vars_equalities) - needed_vars):
         z_str_equation = z_str_equation.subs(
-            basis_vars_equalities[i]["base"],
-            basis_vars_equalities[i]["equation"][0],
+            sorted_basis_vars_equalities[i]["base"],
+            sorted_basis_vars_equalities[i]["equation"][0],
         )
 
     var_terms = sum(
@@ -268,8 +274,9 @@ def artificial_variable_simplex(
 ):
     simplex_matrix_copy = copy_matrix(simplex_matrix)
     additional_basis = []
+    sorted_basis_cols = sorted(basis_cols)
     for i in range(needed_vars):
-        additional_basis.append(basis_cols[-(i + 1)])
+        additional_basis.append(sorted_basis_cols[-(i + 1)])
 
     intermediate_matrices = []
     intermediate_matrices.append(simplex_matrix)
@@ -427,7 +434,7 @@ def artificial_variable_simplex(
     # проверка на остаток искусственных в базисе
     if is_correct:
         last_in_basis = find_basis_variables_in_simplex(simplex_matrix_copy)
-        if has_intersection(basis_cols, last_in_basis):
+        if has_intersection(additional_basis, last_in_basis):
             is_correct = False
 
     # для множества ответов
@@ -637,7 +644,7 @@ def all_prepares_for_matrix(MATRIX):
 
 def main() -> None:
     MATRIX_DIR = "0_zlp"
-    TASK_ID = "pr_task1"
+    TASK_ID = "pr_task4"
 
     MATRIX = read_matrix_from_file(f"{MATRIX_DIR}/{TASK_ID}.txt")
 

@@ -5,26 +5,17 @@ import pytest
 
 from main import (
     solve_matrix,
-    prepare_matrix,
-    copy_arr,
     read_matrix_from_file,
-    create_or_truncate_file,
     all_prepares_for_matrix,
 )
 
-MATRIX_DIR = "0_zlp"
-DIR_FOR_ANSWERS = "answer"
-
-
-def setup_answer_dir():
-    os.makedirs(DIR_FOR_ANSWERS, exist_ok=True)
-    create_or_truncate_file(f"./{DIR_FOR_ANSWERS}/answer.json")
-
 
 def run_solver(task_id):
-    MATRIX = read_matrix_from_file(f"{MATRIX_DIR}/{task_id}.txt")
-    setup_answer_dir()
+    MATRIX_DIR = "0_zlp"
+    DIR_FOR_ANSWERS = "answer"
     result_path = f"./{DIR_FOR_ANSWERS}/answer.json"
+
+    MATRIX = read_matrix_from_file(f"{MATRIX_DIR}/{task_id}.txt")
 
     MATRIX, Z_STR, INITIAL_Z_STR, is_z_min_system = all_prepares_for_matrix(MATRIX)
     solve_matrix(MATRIX, Z_STR, INITIAL_Z_STR, result_path, is_z_min_system)
@@ -59,14 +50,14 @@ def test_problem3():
     assert result["solution"] == expected
 
 
-# def test_problem4():
-#     result = run_solver("pr_task4")
-#     expected = {
-#         "answer_comment": "единственное решение",
-#         "answer": ["0", "2", "4", "1", "0"],
-#         "z_value": "-4",
-#     }
-#     assert result["solution"] == expected
+def test_problem4():
+    result = run_solver("pr_task4")
+    expected = {
+        "answer_comment": "единственное решение",
+        "answer": ["0", "2", "4", "1", "0"],
+        "z_value": "-4",
+    }
+    assert result["solution"] == expected
 
 
 def test_problem5():

@@ -298,7 +298,7 @@ def find_system_solution(matrix: list[list[Fraction]]):
 
 
 def write_answer_to_file(filepath: str, answer_object):
-    with open(filepath, "a", encoding="utf-8") as file:
+    with open(filepath, "w", encoding="utf-8") as file:
         json.dump(answer_object, file, indent=2, default=str, ensure_ascii=False)
 
 
