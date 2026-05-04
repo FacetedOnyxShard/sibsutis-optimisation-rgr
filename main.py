@@ -166,7 +166,7 @@ def add_basis_vars(const_matrix, needed_vars, basis_list):
 def prepare_z_str(basis_vars_equalities, needed_vars, z_str):
     m_basis = []
     sorted_basis_vars_equalities = sorted(
-        basis_vars_equalities, key=lambda x: x["base"]
+        basis_vars_equalities, key=lambda x: int(x["base"][1:])
     )
     for i in range(needed_vars):
         m_basis.append(sorted_basis_vars_equalities[-(i + 1)])
@@ -644,7 +644,7 @@ def all_prepares_for_matrix(MATRIX):
 
 def main() -> None:
     MATRIX_DIR = "0_zlp"
-    TASK_ID = "pr08_task1"
+    TASK_ID = "pr07_task8"
 
     MATRIX = read_matrix_from_file(f"{MATRIX_DIR}/{TASK_ID}.txt")
 
